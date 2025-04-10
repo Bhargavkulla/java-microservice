@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: java-microservice-deployment
+  name: java-microservice
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: java-microservice
@@ -13,7 +13,7 @@ spec:
         app: java-microservice
     spec:
       containers:
-        - name: java-microservice
-          image: bhargavakulla/java-microservice:1.0
-          ports:
-            - containerPort: 8080
+      - name: java-microservice
+        image: yourdockerhubusername/java-microservice:latest
+        ports:
+        - containerPort: 8080
