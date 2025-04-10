@@ -1,6 +1,12 @@
 pipeline {
     agent any
 
+    environment {
+        REGISTRY = 'docker.io'
+        IMAGE_NAME = 'bhargavakulla/java-microservice'
+        SONARQUBE_ENV = 'MySonarQube' // Make sure this matches Jenkins config
+    }
+
     stages {
         stage('Build') {
             steps {
@@ -15,8 +21,15 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
+            when {
+                anyOf {
+                    branch pattern: "feature/.*", comparator: "REGEXP"
+                    branch "develop"
+                    branch "master"
+                }
+            }
             steps {
-                withSonarQubeEnv('MySonarQube') {
+                withSonarQubeEnv("${SONARQUBE_ENV}") {
                     sh 'mvn sonar:sonar'
                 }
             }
@@ -24,17 +37,25 @@ pipeline {
 
         stage('Docker Build & Push') {
             when {
-                branch 'develop'
+                anyOf {
+                    branch "develop"
+                    branch "master"
+                }
             }
             steps {
-                sh 'docker build -t bhargavakulla/java-microservice:1.0 .'
-                sh 'docker push bhargavakulla/java-microservice:1.0'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh """
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker build -t $REGISTRY/$IMAGE_NAME:$BUILD_NUMBER .
+                        docker push $REGISTRY/$IMAGE_NAME:$BUILD_NUMBER
+                    """
+                }
             }
         }
 
         stage('Deploy to Kubernetes') {
             when {
-                branch 'develop'
+                branch "master"
             }
             steps {
                 sh 'kubectl apply -f deployment.yaml'
@@ -43,3 +64,4 @@ pipeline {
         }
     }
 }
+
