@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "java-microservice"
-        DOCKER_REGISTRY = "bhargavakulla"
+        DOCKER_REGISTRY = "bhargavkulla"
     }
 
     stages {
@@ -12,10 +12,11 @@ pipeline {
                 git branch: 'develop', url: 'https://github.com/Bhargavkulla/java-microservice.git'
             }
         }
-        
+
         stage('Build & Test') {
             steps {
-                script {
+                // Make sure Maven is executed in the correct directory
+                dir('java-microservice') { 
                     sh 'mvn clean install -DskipTests=false'
                 }
             }
