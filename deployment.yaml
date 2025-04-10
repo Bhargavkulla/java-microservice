@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
       - name: java-microservice
-        image: yourdockerhubusername/java-microservice:latest
+        image: bhargavakulla/java-microservice:latest
         ports:
         - containerPort: 8080
