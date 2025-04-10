@@ -3,13 +3,13 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "java-microservice"
-        DOCKER_REGISTRY = "yourdockerhubusername"
+        DOCKER_REGISTRY = "bhargavakulla"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'develop', url: 'https://github.com/your-username/your-repository.git'
+                git branch: 'develop', url: 'https://github.com/Bhargavkulla/java-microservice.git'
             }
         }
         
