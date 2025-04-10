@@ -2,66 +2,41 @@ pipeline {
     agent any
 
     environment {
-        REGISTRY = 'docker.io'
-        IMAGE_NAME = 'bhargavakulla/java-microservice'
-        SONARQUBE_ENV = 'MySonarQube' // Make sure this matches Jenkins config
+        DOCKER_IMAGE = "java-microservice"
+        DOCKER_REGISTRY = "yourdockerhubusername"
     }
 
     stages {
-        stage('Build') {
+        stage('Checkout') {
             steps {
-                sh 'mvn clean package'
+                git branch: 'develop', url: 'https://github.com/your-username/your-repository.git'
             }
         }
-
-        stage('Test') {
+        
+        stage('Build & Test') {
             steps {
-                sh 'mvn test'
-            }
-        }
-
-        stage('SonarQube Analysis') {
-            when {
-                anyOf {
-                    branch pattern: "feature/.*", comparator: "REGEXP"
-                    branch "develop"
-                    branch "master"
-                }
-            }
-            steps {
-                withSonarQubeEnv("${SONARQUBE_ENV}") {
-                    sh 'mvn sonar:sonar'
+                script {
+                    sh 'mvn clean install -DskipTests=false'
                 }
             }
         }
 
         stage('Docker Build & Push') {
-            when {
-                anyOf {
-                    branch "develop"
-                    branch "master"
-                }
-            }
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh """
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                        docker build -t $REGISTRY/$IMAGE_NAME:$BUILD_NUMBER .
-                        docker push $REGISTRY/$IMAGE_NAME:$BUILD_NUMBER
-                    """
+                script {
+                    sh 'docker build -t $DOCKER_REGISTRY/$DOCKER_IMAGE:$BUILD_NUMBER .'
+                    sh 'docker push $DOCKER_REGISTRY/$DOCKER_IMAGE:$BUILD_NUMBER'
                 }
             }
         }
 
         stage('Deploy to Kubernetes') {
-            when {
-                branch "master"
-            }
             steps {
-                sh 'kubectl apply -f deployment.yaml'
-                sh 'kubectl apply -f service.yaml'
+                script {
+                    sh 'kubectl apply -f deployment.yaml'
+                    sh 'kubectl apply -f service.yaml'
+                }
             }
         }
     }
 }
-
